@@ -1,5 +1,8 @@
 package com.tbox.service;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
@@ -11,6 +14,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -25,8 +29,8 @@ import com.tbox.sql.SqlFunctions;
 
 public class Functions {
 	public SqlFunctions sqlFunctions = new SqlFunctions();
-	public byte[] rootKey = {0x19,(byte) 0xC1,0x4D,(byte) 0xAA,(byte) 0xB0,0x3C,0x77,0x43,0x68,0x5E,(byte) 0x8B,(byte) 0xF3,0x49,(byte) 0xE4,(byte) 0x9D,0x2A};
-	byte[] sessionKey = {0x19,(byte) 0xC1,0x4D,(byte) 0xAA,(byte) 0xB0,0x3C,0x77,0x43,0x68,0x5E,(byte) 0x8B,(byte) 0xF3,0x49,(byte) 0xE4,(byte) 0x9D,0x2A};
+	/*public byte[] rootKey = {0x19,(byte) 0xC1,0x4D,(byte) 0xAA,(byte) 0xB0,0x3C,0x77,0x43,0x68,0x5E,(byte) 0x8B,(byte) 0xF3,0x49,(byte) 0xE4,(byte) 0x9D,0x2A};*/
+	/*byte[] sessionKey = {0x19,(byte) 0xC1,0x4D,(byte) 0xAA,(byte) 0xB0,0x3C,0x77,0x43,0x68,0x5E,(byte) 0x8B,(byte) 0xF3,0x49,(byte) 0xE4,(byte) 0x9D,0x2A};*/
 	// 命令标识解析
 	public byte hexAnalysis(int i) {		
 		return  (byte) (i & 0xFF);
@@ -37,22 +41,6 @@ public class Functions {
 
 	}
 
-	// 截取字符串
-	/*
-	 * public byte[] interceptByte(int sIndex,int length,byte[] bytes){ 
-	 * 		byte[] returnByte = new byte[length]; 
-	 * 			for (int i = 0; i < length; i++) {
-	 * 				returnByte[i] = bytes[sIndex+1]; 
-	 *			} 
-	 *	return returnByte; 
-	 *}
-	 */
-	// ascii字节数组转字符转
-	/*
-	 * public String interceptByte(byte[] bytes){ String returnByte = new
-	 * byte[length]; for (int i = 0; i < length; i++) { returnByte[i] =
-	 * bytes[sIndex+1]; } return returnByte; }
-	 */
 	/**
 	 * 验证sim 0:没有sim;1:有sim,离线;2:有sim，在线;
 	 */
@@ -113,8 +101,8 @@ public class Functions {
 	public byte[] getDecCode(byte[] enc,byte[] keyByte) {
 		byte[] dec = null;
 		Cipher c;
-		byte[] rootKey = {0x19,(byte) 0xC1,0x4D,(byte) 0xAA,(byte) 0xB0,0x3C,0x77,0x43,0x68,0x5E,(byte) 0x8B,(byte) 0xF3,0x49,(byte) 0xE4,(byte) 0x9D,0x2A};
-		SecretKeySpec skeySpec = new SecretKeySpec(rootKey, "AES");
+		/*byte[] rootKey = {0x19,(byte) 0xC1,0x4D,(byte) 0xAA,(byte) 0xB0,0x3C,0x77,0x43,0x68,0x5E,(byte) 0x8B,(byte) 0xF3,0x49,(byte) 0xE4,(byte) 0x9D,0x2A};*/
+		SecretKeySpec skeySpec = new SecretKeySpec(keyByte, "AES");
 		try {
 			c = Cipher.getInstance("AES/ECB/NoPadding");
 			try {
@@ -138,23 +126,7 @@ public class Functions {
 		}
 		return dec;
 	}
-	/**
-	 * AES密钥生成
-	 */
-	private SecretKey getRootKey(byte[] rootKey) {
-		Security.addProvider(new com.sun.crypto.provider.SunJCE());
-		//这个是密匙生成器，多种算法通用的。
-		SecretKeySpec skeySpec = new SecretKeySpec(rootKey, "AES");
-		/*KeyGenerator keyGen = KeyGenerator.getInstance("AES");*/
-		// 使用用户输入的key，按照长度128初始化密匙生成器
-		/*keyGen.init(128, new SecureRandom(rootKey));
-		SecretKey key = keyGen.generateKey();
-		keyGen = null;*/
-		return skeySpec;
-/*		System.out.println("key为null");
-		return null;*/
-
-	}
+	
 	/**
 	 * 转换16进制
 	 */
@@ -181,7 +153,7 @@ public class Functions {
 		return Integer.parseInt(s,16);
 	}
 	/**
-	 * 16进制转换10进制
+	 * 16进制字节数组转换字符串
 	 */
 	public String  sixteenToString(byte[] data){
 		String replyData = "";
@@ -252,7 +224,7 @@ public class Functions {
 		return time;
 	}
 	/**
-	 * string型转byte[]
+	 * 16进制string型转byte[]
 	 */
 	public byte[] getByteArray(String time,int byteL){
 		int[] timeInt = new int[byteL];
@@ -285,7 +257,7 @@ public class Functions {
 			flag = updateSessionKey(simCode,init);
 		}
 		
-		byte[] enc = getEncCode(init,rootKey);//获得用根密钥加密后的会话密钥
+		byte[] enc = getEncCode(init,getRootKey(simCode));//获得用根密钥加密后的会话密钥
 		byte[] issuedTime = getByteArray(getLocalDate(),6);//获得事件下发时间
 		int dataCellL = 30;//数据单元长度
 		int dataL = 24+ dataCellL+1;//下发数据长度
@@ -357,7 +329,200 @@ public class Functions {
 			}	
 			hex += a.toUpperCase();
 		}
+	    System.out.println("修改会话密钥的simCode"+simCode);
 	    int result = sqlFunctions.updateSessionKey(hex, simCode);
 		return result;
 	}
+	/**
+	 * 获取会话密钥;
+	 */
+	public byte[] getSessionKey(String simCode) {
+		System.out.println("simCode:"+simCode);
+		byte[] sessionKey = hexStringToBytes(sqlFunctions.getSessionKey(simCode));
+		return sessionKey;
+	}
+	/**
+	 * 获取根密钥;
+	 */
+	public byte[] getRootKey(String simCode) {
+		byte[] rootKey = hexStringToBytes(sqlFunctions.getRootKey(simCode));
+		return rootKey;
+	}
+	/**
+	 * 应答
+	 */
+	public void cxtResponse(byte[] result1,ChannelHandlerContext ctx,ByteBuf result,byte identification){
+		int resunlt1L = result1.length;
+		result1[3] = identification;
+    	result1[resunlt1L-1] = hexStringToBytes(getBCC(result1))[0];
+    	result.writeBytes(result1); 
+    	ctx.write(result);  	                
+        ctx.flush();
+        System.out.println("总线上报应答："+getHex(result1));
+	}
+	/**
+	 * 获取报警设置
+	 */
+	public void getAlarmSet(String simCode,ChannelHandlerContext ctx){
+		String[] alarmSet = sqlFunctions.getAlarmSet(simCode);//获取报警设置
+		byte[] alarmPara = new byte[6];
+		if(alarmSet[0].equals("1")){
+			byte[] alarmRate = intToByte4(Integer.parseInt(alarmSet[1]));//上报时间间隔
+			byte[] alarmT = intToByte2(Integer.parseInt(alarmSet[2]));//报警温度
+			System.arraycopy(alarmRate, 0, alarmPara, 0, 4);
+			System.arraycopy(alarmT, 0, alarmPara, 4, 2);
+						
+			byte[] dataCell = new byte[20];//创建数据单元			
+			/**
+			 * 添加上报频率
+			 */
+			//添加事件ID
+			dataCell[6] = 0x00;
+			dataCell[7] = 0x02;
+			//添加数据体长度
+			dataCell[8] = 0x00;
+			dataCell[9] = 0x04;
+			//添加数据体
+			System.arraycopy(alarmRate, 0, dataCell, 10, 4);
+			/**
+			 * 添加报警温度
+			 */
+			//添加事件ID
+			dataCell[14] = 0x00;
+			dataCell[15] = 0x08;
+			//添加数据体长度
+			dataCell[16] = 0x00;
+			dataCell[17] = 0x02;
+			
+			System.arraycopy(alarmT, 0, dataCell, 18, 2);	//添加数据体		
+			
+			byte[] encDataCell = getEncCode(dataCell, getSessionKey(simCode));//加密数据单元
+			
+			int encDataCellL = encDataCell.length;//获取加密后数据单元长度
+			int dataCellL = 20;//数据单元长度
+			int issuedAlarmParaL = 24+encDataCellL+1;
+			
+			byte[] issuedAlarmPara = new byte[issuedAlarmParaL];//创建自定义参数设置包
+			byte[] issuedTime = getByteArray(getLocalDate(),6);//获得事件下发时间
+			System.arraycopy(issuedTime, 0, dataCell, 0, 6);//添加数据下发时间
+			
+			issuedAlarmPara[2] = (byte) 0xE0;//数据下发包命令标识位0xE0（自定义参数设置）
+			issuedAlarmPara[21] = 0x03;//数据下发包 数据单元加密 0x03 数据经过AES128位算法加密
+			String dataCellLStr = String.valueOf(dataCellL);//将int型数据单元长度转换成16进制String型
+			int dataCellLStrL = dataCellLStr.length();//获取String型数据单元长度的length
+			for (int i = 0; i < 4-dataCellLStrL; i++) {
+				dataCellLStr = "0" +dataCellLStr;
+			}
+			System.out.println(dataCellLStr+"字符串形式的数据单元长度");
+			byte[] dataCellLByte = getByteArray(dataCellLStr,2);
+			System.arraycopy(dataCellLByte, 0, issuedAlarmPara, 22, 2);//添加数据单元长度									
+			
+			System.arraycopy(dataCell, 0, issuedAlarmPara, 24, encDataCellL);//添加数据单元
+			
+			issuedAlarmPara[issuedAlarmParaL-1] = hexStringToBytes(getBCC(issuedAlarmPara))[0];//添加BCC校验码
+			
+			final ByteBuf data = ctx.alloc().buffer(issuedAlarmPara.length); // (2)
+	        data.writeBytes(issuedAlarmPara);
+	        ctx.write(data);
+	        ctx.flush();
+	        System.out.println("自定义参数设置发送 to hex:"+getHex(issuedAlarmPara));
+			
+		}
+	}
+	/**
+	 * int型转4字节 byte[]
+	 */
+	public byte[] intToByte4(int para){
+		byte[] abyte = new byte[4];
+		abyte[3] = (byte)(0xff & para);
+
+		abyte[2] = (byte)((0xff00 & para) >> 8);
+
+		abyte[1] = (byte)((0xff0000 & para) >> 16);
+
+		abyte[0] = (byte)((0xff000000 & para) >> 24);
+		return abyte;
+		
+	}
+	/**
+	 * int型转2字节 byte[]
+	 */
+	public byte[] intToByte2(int para){
+		byte[] abyte = new byte[2];
+		abyte[1] = (byte)(0xff & para);
+
+		abyte[0] = (byte)((0xff00 & para) >> 8);
+		return abyte;		
+	}
+	/**
+	 * 存储总线数据
+	 * eg.:0000000BB0330770000  
+	 */
+	public void saveUpdateInfo(byte[] dataBodyByte,String simCode){
+		byte[] humiData = new byte[4];
+		byte[] tempData = new byte[4];
+		byte[] SOCData = new byte[2];
+		byte[] SOHData = new byte[2];
+		byte[] alarmStatusData = new byte[1];
+		double humi = 0 ;
+		double temp = 0 ;
+		double SOC = 0 ;
+		double SOH = 0 ;
+		int shockA = 0 ;
+		int smokeA = 0 ;
+		
+		System.arraycopy(dataBodyByte, 0, humiData, 0, 4);
+		System.arraycopy(dataBodyByte, 4, tempData, 0, 4);
+		System.arraycopy(dataBodyByte, 8, SOCData, 0, 2);
+		System.arraycopy(dataBodyByte, 10, SOHData, 0, 2);
+		System.arraycopy(dataBodyByte, 14, alarmStatusData, 0, 1);
+		
+		switch (hexAnalysis(alarmStatusData[0])) {
+		case 0x04:
+			shockA = 1;
+			break;
+		case 0x08:
+			smokeA = 1;
+			break;
+		case 0x0C:
+			shockA = 1;
+			smokeA = 1;
+			break;
+		default:
+			break;
+		}
+		
+		humi = bytesToInt(humiData)*0.39;
+		temp =  (bytesToInt(tempData))*0.8-50;
+		SOC =  bytesToInt(SOCData)*0.39;
+		SOH =  bytesToInt(SOHData)*0.39; 
+		sqlFunctions.updateBmsMonitor(simCode, humi, temp, SOC, SOH, shockA, smokeA);
+		
+	}
+	/**
+	 * 16进制字节数组转换int整型
+	 */
+	public int bytesToInt(byte[] para){
+		
+		int paraValue = sixteenToTen(sixteenToString(para));
+		return paraValue;
+		
+	}
+	/**
+	 * 随机生成32字节编号
+	 * @return uuid
+	 */
+	public  String getUUID(){    
+       String uuid = UUID.randomUUID().toString().trim().replaceAll("-", "");           
+       return uuid;    
+    }  
+	/**
+	 * 修改离线状态
+	 * @param simCode 
+	 * @param offline 
+	 * @return
+	 */
+	public  void updateOffline(String simCode, String offline){    
+         sqlFunctions.updateOffline(simCode, offline) ;
+    }    
 }

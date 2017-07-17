@@ -37,7 +37,7 @@ public class EchoServer {
 	             .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
 	                 @Override
 	                 public void initChannel(SocketChannel ch) throws Exception {
-	                	 ch.pipeline().addLast(new IdleStateHandler(0, 0, 10,TimeUnit.SECONDS));
+	                	 ch.pipeline().addLast(new IdleStateHandler(0, 0, 190,TimeUnit.SECONDS));
 	                	 ch.pipeline().addLast(new EchoIdleStateHandler());
 	                     ch.pipeline().addLast(new EchoServerHandler());
 	                     

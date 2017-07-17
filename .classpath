@@ -5,5 +5,6 @@
 	<classpathentry kind="lib" path="lib/netty-all-4.1.12.Final-sources.jar"/>
 	<classpathentry kind="lib" path="lib/netty-all-4.1.12.Final.jar" sourcepath="D:/框架/jar/netty-4.1.12.Final/jar/all-in-one/netty-all-4.1.12.Final-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.30-bin.jar"/>
+	<classpathentry kind="lib" path="lib/jxl.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

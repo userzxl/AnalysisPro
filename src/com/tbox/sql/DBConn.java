@@ -8,11 +8,13 @@ import java.sql.SQLException;
 
 
 public class DBConn {
-	public static final String url = "jdbc:mysql://10.44.30.175:3306/bms";  
+	/*public static final String url = "jdbc:mysql://10.44.30.175:3306/bms"; */ 
+	public static final String url = "jdbc:mysql://139.129.163.71:3306/bms";  //ubuntu服务器数据库
     public static final String name = "com.mysql.jdbc.Driver";  
     public static final String user = "root";  
-    public static final String password = "root";  
-  
+    /*public static final String password = "root"; */
+    public static final String password = "admin"; //ubuntu服务器数据库密码
+
     public Connection conn = null;  
     public PreparedStatement pst = null;  
   
